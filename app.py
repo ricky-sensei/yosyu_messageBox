@@ -1,0 +1,63 @@
+from flask import Flask, render_template, request, redirect, flash
+from werkzeug.security import generate_password_hash
+from config import User
+from flask_login import LoginManager
+
+
+app = Flask(__name__)
+
+
+app = Flask(__name__)
+app.secret_key = "secret"
+
+# ログインマネージャーをインスタンス化
+# ユーザーのログイン状態を管理してくれる便利なやつ
+login_manager = LoginManager()
+
+
+# ログイン中のユーザー情報を取得するためのメソッド
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get_by_id(user_id)
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+
+        if not request.form["name"] or not request.form["password"] or not request.form["email"]:
+            flash("未入力の項目があります。")
+            return redirect(request.url)
+        if User.select().where(User.name == request.form["name"]):
+            flash("その名前は既に使われています")
+            return redirect(request.url)
+        if User.select().where(User.email == request.form["email"]):
+            flash("そのメールアドレスは既に使われています。")
+            return redirect(request.url)
+
+        User.create(
+            name=request.form["name"],
+            email=request.form["email"],
+            password=generate_password_hash(request.form["password"]),
+        )
+        return render_template("index.html")
+    return render_template("register.html")
+
+
+@app.route("/login")
+def login():
+    print("login")
+    return render_template("login.html")
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8000, debug=True)
+
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8000, debug=True)
