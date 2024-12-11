@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, redirect, flash
+from flask import Flask, render_template, request, redirect, flash, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from config import User
-from flask_login import LoginManager, current_user, login_user, logout_user
+from flask_login import LoginManager, current_user, login_user, logout_user, login_required
 
 
 app = Flask(__name__)
@@ -23,6 +23,11 @@ def load_user(user_id):
     return User.get_by_id(user_id)
 
 
+@login_manager.unauthorized_handler
+def unauthorized_handler():
+    return redirect(url_for("login"))
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -36,12 +41,15 @@ def register():
         if User.select().where(User.email == request.form["email"]):
             flash("そのメールアドレスは既に使われています。")
             return redirect(request.url)
-
-        User.create(
+        try:
+            User.create(
             name=request.form["name"],
             email=request.form["email"],
             password=generate_password_hash(request.form["password"]),
         )
+        except Exception as e:
+            flash(f"{{e}}")
+        
         return render_template("index.html")
     return render_template("register.html")
 
@@ -58,24 +66,26 @@ def login():
             login_user(user)
 
             flash(f"ようこそ{user.name}さん")
-            return redirect("/")
+            return redirect(url_for("index"))
         flash("認証に失敗しました。")
 
     return render_template("login.html")
 
 
 @app.route("/logout")
+@login_required
 def logout():
     logout_user()
     flash("ログアウトしました")
-    return redirect("/")
+    return redirect(url_for("index"))
 
 
 @app.route("/unregister")
+@login_required
 def unregister():
     current_user.delete_instance()
     logout_user()
-    return redirect("/")
+    return redirect(url_for("index"))
 
 
 @app.route("/")
