@@ -6,6 +6,19 @@
     <title>Document</title>
 </head>
 <body>
-    Login
+    {% for message in get_flashed_messages() %}
+        <p>{{message}}</p>
+    {% endfor %}
+    <form action="" method="post">
+        <label for="email">Email:</label>
+        <br>
+        <input type="email" name="email" id="email">
+        <br>
+        <label for="password">Password:</label>
+        <br>
+        <input type="password" name="password" id="password">
+        <br>
+        <input type="submit" value="Login">
+    </form>
 </body>
 </html>
